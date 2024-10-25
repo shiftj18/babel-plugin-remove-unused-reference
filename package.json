@@ -1,0 +1,32 @@
+{
+  "name": "babel-plugin-remove-unused-reference",
+  "version": "1.0.0",
+  "main": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "example": "node ./examples/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:shiftj18/babel-plugin-remove-unused-reference.git"
+  },
+  "keywords": [
+    "babel-plugin-remove"
+  ],
+  "author": "shiftj18",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shiftj18/babel-plugin-remove-unused-reference/issues"
+  },
+  "homepage": "https://github.com/shiftj18/babel-plugin-remove-unused-reference#readme",
+  "description": "Babel plugin, remove unused references",
+  "devDependencies": {
+    "@babel/core": "^7.25.9"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  }
+}
