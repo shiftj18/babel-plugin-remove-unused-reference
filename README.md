@@ -6,9 +6,10 @@ Babel plugin, remove unused reference.
 
 
 #### Supports:
-- when const isX = false; => remove `const x = isX ? A : B;` ->`const x = B;`
-- when const isX = false; => remove `if (isX) { B } else { B }` ->`{ B}`
+- when const isX = false; => remove `const x = isX ? A : B;` -> `const x = B;`
+- when const isX = false; => remove `if (isX) { B } else { B }` -> `{ B}`
 - when const isX = false; support `(isX && isY && ...)`, `(isA && isX)` and isA is normal data type.
+- support `const x = false ? A : B` ->  `const x = B` and `if (false) A else B` -> `B`
 
 #### Examples
 
