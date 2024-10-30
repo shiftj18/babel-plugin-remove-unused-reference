@@ -6,153 +6,206 @@ Babel plugin, remove unused reference.
 
 
 #### Supports:
-- when const isX = false; => remove `const x = isX ? A : B;` -> `const x = B;`
-- when const isX = false; => remove `if (isX) { B } else { B }` -> `{ B}`
-- when const isX = false; support `(isX && isY && ...)`, `(isA && isX)` and isA is normal data type.
+
+- when `const isX = false;`, change `const x = isX ? A : B;` -> `const x = B;`
+- when `const isX = false;`, change `if (isX) { A } else { B }` -> `{ B }`
+- when `false`, support `(isX && ...)`, `(... && isX)` (left ...  is normal data type without slide effetcs)
 - support `const x = false ? A : B` ->  `const x = B` and `if (false) A else B` -> `B`
+
+
+- when `const isX = true;`, change `const x = isX ? A : B;` -> `const x = A;`
+- when `const isX = true;`, change `if (isX) { A } else { B }` -> `{ A }`
+- when `true`, support `(isX || ...)`, `(... || isX)` (left ...  is normal data type without slide effetcs)
+- support `const x = true ? A : B` ->  `const x = A` and `if (true) A else B` -> `A`
 
 #### Examples
 
 Input:
 ```js
-`
-import { A, B } from 'U';
+test(`
+  // 测试变量 const isX = false 时，条件表达式中 isX 相应逻辑的剔除
+  const isX = false;
 
-const isX = false;
-const isX1 = false;
+  const A = isX ? { a } : {};
+  const A2 = isX && x && 2 && true && fn() ? { a2 } : {};
+  const A3 = x && isX ? { a3 } : {};
+  const A4 = x && 2 && true && '2' && isX ? { a4 } : {};
 
-const U = isX ? { A, B } : {};
+  const A0 = fn() && isX ? {} : { a0 };
+`);
 
-let x;
-if (isX) {
-  x = 1;
-}
 
-if (isX) {
-  x = 11;
-} else {
-  x = 12;
-}
+test(`
+  // 测试条件表达式中含有 false 字面量时，条件表达式中相应逻辑的剔除
+  const A = false ? { a } : {};
+  const A2 = false && x && 2 && '2' && fn() ? { a2 } : {};
+  const A3 = x && 2 && true && false ? { a3 } : {};
 
-if (isX && 2) {
-  consloe.log('2');
-}
+  const A0 = fn() && false ? { a0 } : {};
+`);
 
-if (isX) {
-  console.log('3');
-} else if (isWechat) {
-  console.log('31');
-} else if (isMiniApp) {
-  console.log('32');
-} else {
-  console.log('33');
-}
 
-if (4 && isX) {
-  consloe.log('4');
-}
+test(`
+  // 测试变量 const isX = false 时，if 语句中 isX 相应逻辑的剔除
+  const isX = false;
 
-if (41 && isX && isXXX) {
-  consloe.log('41');
-}
+  if (isX) { a } else {}
+  if (isX && x && 2 && true && fn()) { a2 } else {}
+  if (x && 2 && true && '2' && isX) { a3 } else {}
 
-if (5 && 55 && isX) {
-  consloe.log('5');
-}
+  if (fn() && isX) { a0 } else {}
+`);
 
-if (getA() && isX) {
-  console.log('6');
-}
 
-let b;
-if (isX1) {
-  b = 1;
-} else {
-  b = 11;
-}
+test(`
+  // 测试条件表达式中含有 false 字面量时，if 语句中相应逻辑的剔除
 
-if (isXX) {
-  console.log('4444');
-}
+  if (false) { a } else {}
+  if (false && x && 2 && true && fn()) { a2 } else {}
+  if (x && 2 && true && '2' && false) { a3 } else {}
 
-const isX2 = true;
-if (isY) {
-  console.log('1');
-} else {
-  console.log('11');
-}
-function a() {
-  const isX2 = false;
-  if (isX2) {
-    console.log('2');
-  } else {
-    console.log('21');
-  }
+  if (fn() && false) { a0 } else {}
+`);
+
+
+test(`
+  // 测试条件表达式中含有 const isX = true 时，条件表达式中 isX 相应逻辑的剔除
+  const isX = true;
+
+  const A = isX ? { } : { a };
+  const A2 = isX || x || 2 || false || fn() ? { } : { a2 };
+  const A3 = x || isX ? { } : { a3 };
+  const A4 = x || 2 || isX || false || '2' ? { } : { a4 };
+
+  const A0 = fn() || isX ? { } : { a0 };
+`);
+
+
+test(`
+  // 测试条件表达式中含有 true 字面量时，条件表达式中相应逻辑的剔除
   
-  let isX3 = false;
-  isX3 = true;
-  if (isX3) {
-    console.log('1');
-  } else {
-    console.log('11');
-  }
-}
+  const A = true ? { } : { a };
+  const A2 = true || x || 2 || '2' || fn() ? { } : { a2 };
+  const A3 = x || 2 || false || true || '2' || fn() ? { } : { a3 };
 
-`
+  const A0 = fn() || true ? { } : { a0 };
+`);
+
+
+test(`
+  // 测试条件表达式中含有 const isX = true 时，if 语句中 isX 相应逻辑的剔除
+  const isX = true;
+
+  if (isX) { } else { a }
+  if (isX || x || 2 || false || fn()) { } else { a2 }
+  if (x || 2 || false || '2' || isX) { } else { a3 }
+  if (false) { a4 } else if (true) { } else if (isWeb) { a41 } else { a42 }
+
+  if (fn() || isX) { } else { a0 }
+`);
+
+
+test(`
+  // 测试条件表达式中含有 true 字面量时，if 语句中相应逻辑的剔除
+  
+  if (true) { } else { a }
+  if (true || x || 2 || false || fn()) { } else { a2 }
+  if (x || 2 || false || '2' || true) { } else { a3 }
+  if (false) { a4 } else if (true) { } else { a41 }
+  if (false) { a5 } else if (x || 2 || true || false || '2') { } else { a51 }
+
+  if (fn() || true) { } else { a0 }
+`);
 ```
 
-Output:
+output:
 ```bash
-import { A, B } from 'U';
+> npm run example
+> node ./examples/index.js
+
+// 测试变量 const isX = false 时，条件表达式中 isX 相应逻辑的剔除
 const isX = false;
-const isX1 = false;
-const U = {};
-let x;
-{
-  x = 12;
+const A = {};
+const A2 = {};
+const A3 = {};
+const A4 = {};
+const A0 = fn() && isX ? {} : {
+  a0
+};
+---------------------------------------
+
+// 测试条件表达式中含有 false 字面量时，条件表达式中相应逻辑的剔除
+const A = {};
+const A2 = {};
+const A3 = {};
+const A0 = fn() && false ? {
+  a0
+} : {};
+---------------------------------------
+
+// 测试变量 const isX = false 时，if 语句中 isX 相应逻辑的剔除
+const isX = false;
+{}
+{}
+{}
+if (fn() && isX) {
+  a0;
+} else {}
+---------------------------------------
+
+// 测试条件表达式中含有 false 字面量时，if 语句中相应逻辑的剔除
+
+{}
+{}
+{}
+if (fn() && false) {
+  a0;
+} else {}
+---------------------------------------
+
+// 测试条件表达式中含有 const isX = true 时，if 语句中 isX 相应逻辑的剔除
+const isX = true;
+{}
+{}
+{}
+{}
+if (fn() || isX) {} else {
+  a0;
 }
-if (isWechat) {
-  console.log('31');
-} else if (isMiniApp) {
-  console.log('32');
-} else {
-  console.log('33');
+---------------------------------------
+
+// 测试条件表达式中含有 true 字面量时，if 语句中相应逻辑的剔除
+
+{}
+{}
+{}
+{}
+{}
+if (fn() || true) {} else {
+  a0;
 }
-if (41 && isX && isXXX) {
-  consloe.log('41');
-}
-if (5 && 55 && isX) {
-  consloe.log('5');
-}
-if (getA() && isX) {
-  console.log('6');
-}
-let b;
-{
-  b = 11;
-}
-if (isXX) {
-  console.log('4444');
-}
-const isX2 = true;
-if (isY) {
-  console.log('1');
-} else {
-  console.log('11');
-}
-function a() {
-  const isX2 = false;
-  {
-    console.log('21');
-  }
-  let isX3 = false;
-  isX3 = true;
-  if (isX3) {
-    console.log('1');
-  } else {
-    console.log('11');
-  }
-}
+---------------------------------------
+
+// 测试条件表达式中含有 const isX = true 时，条件表达式中 isX 相应逻辑的剔除
+const isX = true;
+const A = {};
+const A2 = {};
+const A3 = {};
+const A4 = {};
+const A0 = fn() || isX ? {} : {
+  a0
+};
+---------------------------------------
+
+// 测试条件表达式中含有 true 字面量时，条件表达式中相应逻辑的剔除
+
+const A = {};
+const A2 = {};
+const A3 = {};
+const A0 = fn() || true ? {} : {
+  a0
+};
+---------------------------------------
 ```
 
 ## Usage

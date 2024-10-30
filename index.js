@@ -1,4 +1,104 @@
 module.exports = function ({ types: t }) {
+
+  function removeIfStatement (path) {
+    // 如果是 if 语句，且有 else、else-if，则仅去除 if 条件分支，保留 else、else-if 条件分支
+    // 如果没有 else，则移除整个 if
+    if (path.node.alternate) {
+      path.replaceWith(path.node.alternate);
+    } else {
+      path.remove();
+    }
+  }
+
+  function removeElseStatement (path) {
+    // 如果 if 条件是 true，保留 if 语句，移除 else 语句
+    if (path.node.alternate) {
+      path.replaceWith(path.node.consequent);
+    }
+  }
+
+  // 移除 isX 所在的 `if (isX) {}`、`isX ? A : B` 等父节点
+  function remove(path) {
+    if (t.isConditionalExpression(path)) {
+      path.replaceWith(path.node.alternate);
+    } else if (t.isIfStatement(path)) {
+      removeIfStatement(path);
+    }
+  }
+
+  function removeElse(path) {
+    if (t.isConditionalExpression(path)) {
+      path.replaceWith(path.node.consequent);
+    } else if (t.isIfStatement(path)) {
+      removeElseStatement(path);
+    }
+  }
+
+  // 判断无副作用的变量（非函数调用、逻辑表达式等）
+  function isPureNode (node, options = {}) {
+    const { recursive = false, operator = '&&' } = options;
+    return t.isLiteral(node)
+      || t.isIdentifier(node)
+      || t.isArrayExpression(node)
+      || t.isObjectExpression(node)
+      || (
+        recursive && 
+        (t.isLogicalExpression(node) && node.operator === operator && isPureNode(node.left, options) && isPureNode(node.right, options))
+      )
+  }
+
+  function isBooleanIdentifier(node, name) {
+    return t.isIdentifier(node) && node.name === name;
+  }
+
+  function isFalseLogicExpression(node, tester) {
+    return (
+      t.isLogicalExpression(node) && node.operator === '&&' &&
+      (
+        (tester(node.left)) ||
+        isFalseLogicExpression(node.left, tester) ||
+        (tester(node.right) && isPureNode(node.left, { recursive: true, operator: '&&' }))
+      )
+    );
+  }
+
+  function isConstFalseLogicExpression(node, name) {
+    return isFalseLogicExpression(node, (test) => isBooleanIdentifier(test, name));
+  }
+
+  function isFalseBooleanLiteral(node) {
+    return t.isBooleanLiteral(node) && node.value === false;
+  }
+
+  // 判断 `false && ...` and `x && false && ...`其中 x 是无副作用的（基本类型）
+  function isFalseLiteralLogicExpression (node) {
+    return isFalseLogicExpression(node, isFalseBooleanLiteral);
+  }
+
+  function isTrueLogicExpression(node, tester) {
+    return (
+      t.isLogicalExpression(node) && node.operator === '||' &&
+      (
+        (tester(node.left)) ||
+        isTrueLogicExpression(node.left, tester) ||
+        (tester(node.right) && isPureNode(node.left, { recursive: true, operator: '||' }))
+      )
+    );
+  }
+
+  function isConstTrueLogicExpression(node, name) {
+    return isTrueLogicExpression(node, (test) => isBooleanIdentifier(test, name));
+  }
+
+  function isTrueBooleanLiteral(node) {
+    return t.isBooleanLiteral(node) && node.value === true;
+  }
+
+  // 判断 `... || true || ...`，左侧不能包含副作用的
+  function isTrueLiteralLogicExpression (node) {
+    return isTrueLogicExpression(node, isTrueBooleanLiteral);
+  }
+
   return {
     visitor: {
       VariableDeclarator(path) {
@@ -6,34 +106,46 @@ module.exports = function ({ types: t }) {
           t.isBooleanLiteral(path.node.init) &&
           t.isIdentifier(path.node.id)
         ) {
-          // 找到 `const isX = false` 这种恒为 false 的变量 isX
+          // 找到 `const isX = false` 这种恒为 false 的变量 isX，剔除 isX 相关的死逻辑
+          // 找到 `const isX = true` 这种恒为 true 的变量 isX，剔除 isX 相反的死逻辑
+          // 主要是：条件表达式、和 if-else 语句
           if (
-            !path.node.init.value &&
             t.isVariableDeclaration(path.parent) &&
-            path.parent.kind === "const"
+            path.parent.kind === "const" &&
+            (
+              path.node.init.value === false ||
+              path.node.init.value === true
+            )
           ) {
             const name = path.node.id.name;
-            // 通过 scope 实现，bindinds 记录了所有 isX 的引用
+            const value = path.node.init.value;
             const bindings = path.scope.bindings[name];
             if (bindings.referenced && bindings.referencePaths.length) {
               bindings.referencePaths.forEach((refPath) => {
-                remove(refPath);
-
-                // 级联判断的逻辑表达式支持，如 isX 恒为 fasle 时的 `isX && isY && isZ ? A : B` 语句
-                const parentPath = refPath.parentPath;
-                const parentNode = refPath.parent;
-                if (
-                  t.isLogicalExpression(parentNode) &&
-                  parentNode.operator === "&&"
-                ) {
+                // 向上找到第一个相关父节点
+                // 条件表达式 `const y = isX ? A : B`
+                // 或 条件语句 `if (isX) {} else {}`
+                const rootPath = refPath.findParent(path => t.isConditionalExpression(path) || t.isIfStatement(path));
+                if (rootPath) {
                   if (
-                    // isX 是第一个时，无论后面还级联了多少个判断条件，整条逻辑表达式都可以删除，无风险
-                    (t.isIdentifier(parentNode.left) && parentNode.left.name === name) ||
-                    // isX 不在第一个时，前面的判断条件可能是有副作用的（比如函数调用内有副作用，比如也是逻辑表达式），一般不能移除
-                    // 这里稍做优化，对 `(isA && isX)` 这种 isX 前面仅存在一个判断条件且其是普通数据类型时，认为是无副作用的，删之
-                    (t.isIdentifier(parentNode.right) && parentNode.right.name === name && isNonSlideEffectLogicExpression(parentNode.left))
+                    value === false &&
+                    (
+                      // `isX ? A : B` -> `B`
+                      isBooleanIdentifier(rootPath.node.test, name) ||
+                      // `... && isX && ... ? A : B` -> `B` 这种
+                      // 左侧只支持无副作用的，目前有副作用的不动，比如函数
+                      isConstFalseLogicExpression(rootPath.node.test, name)
+                    )
                   ) {
-                    remove(parentPath);
+                    remove(rootPath);
+                  } else if (
+                    value === true &&
+                    (
+                      isBooleanIdentifier(rootPath.node.test, name) ||
+                      isConstTrueLogicExpression(rootPath.node.test, name)
+                    )
+                  ) {
+                    removeElse(rootPath);
                   }
                 }
               });
@@ -41,71 +153,32 @@ module.exports = function ({ types: t }) {
           }
         }
 
-        // 处理三元表达式  `const x = false ? A : B` => `const x = B`
+        // false 字面量处理，条件表达式 `const x = false ? A : B` => `const x = B`
         if (t.isConditionalExpression(path.node.init)) {
           const condition = path.node.init.test;
           const alternate = path.node.init.alternate;
-          // 如果条件是 false
-          if (isFalseBooleanLiteral(condition) || isFalseLogicExpression(condition)) {
-            path.replaceWith(
-              t.variableDeclarator(path.node.id, alternate)
-            );
+          const consequent = path.node.init.consequent;
+          if (isFalseBooleanLiteral(condition) || isFalseLiteralLogicExpression(condition)) {
+            path.replaceWith(t.variableDeclarator(path.node.id, alternate));
+          } else if (isTrueBooleanLiteral(condition) || isTrueLiteralLogicExpression(condition)) {
+            path.replaceWith(t.variableDeclarator(path.node.id, consequent));
           }
         }
       },
+
       IfStatement(path) {
-        // 处理 if 语句  `if (false) A else B` -> `B`
+        // 处理 if 语句
+        // `if (false) A else B` -> `B`
+        // `if (true) A else B` -> `A`
         const test = path.node.test;
-        if (isFalseBooleanLiteral(test) || isFalseLogicExpression(test)) {
+        if (isFalseBooleanLiteral(test) || isFalseLiteralLogicExpression(test)) {
           removeIfStatement(path);
+        } else if (isTrueBooleanLiteral(test) || isTrueLiteralLogicExpression(test)) {
+          if (path.node.alternate) {
+            path.replaceWith(path.node.consequent);
+          }
         }
       },
     },
   };
-
-  // 移除 isX 所在的 `if (isX) {}`、`isX ? A : B` 等父节点
-  function remove(innerPath) {
-    const parentPath = innerPath.parentPath;
-    const parentNode = innerPath.parent;
-
-    if (t.isConditionalExpression(parentNode)) {
-      parentPath.replaceWith(parentNode.alternate);
-    }
-
-    if (t.isIfStatement(parentNode)) {
-      // 如果是 if 语句，且有 else、else-if，则仅去除 if 条件分支，保留 else、else-if 条件分支
-      // 如果没有 else，则移除整个 if
-      if (parentNode.alternate) {
-        parentPath.replaceWith(parentNode.alternate);
-      } else {
-        parentPath.remove();
-      }
-    }
-  }
-
-  function removeIfStatement (path) {
-    // 如果 if 条件是 false，直接移除整个 if 语句保留 else 语句
-    if (path.alternate) {
-      path.replaceWith(path.alternate);
-    } else {
-      path.remove();
-    }
-  }
-
-  function isFalseBooleanLiteral(test) {
-    return t.isBooleanLiteral(test) && !test.value;
-  }
-
-  function isNonSlideEffectLogicExpression (test) {
-    return t.isIdentifier(test) || t.isBooleanLiteral(test) || t.isStringLiteral(test) || t.isNumericLiteral(test);
-  }
-
-  // 判断 `false && ...` and `x && false`
-  function isFalseLogicExpression (test) {
-    return t.isLogicalExpression(test) && test.operator === "&&" &&
-      (
-        (t.isBooleanLiteral(test.left) && !test.left.value) || 
-        (t.isBooleanLiteral(test.right) && !test.right.value && isNonSlideEffectLogicExpression(test.left))
-      );
-  }
 };
