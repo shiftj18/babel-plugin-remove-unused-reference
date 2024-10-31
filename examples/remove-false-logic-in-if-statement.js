@@ -7,6 +7,7 @@ test(`
   if (isX) { a } else {}
   if (isX && x && 2 && true && fn()) { a2 } else {}
   if (x && 2 && true && '2' && isX) { a3 } else {}
+  if (x && 2 && true) { } else if ('2' && isX) {} else { }
 
   if (fn() && isX) { a0 } else {}
 `);
@@ -17,6 +18,7 @@ test(`
   if (false) { a } else {}
   if (false && x && 2 && true && fn()) { a2 } else {}
   if (x && 2 && true && '2' && false) { a3 } else {}
+  if (x && 2 && true) {} else if ('2' && false) { a3 } else {}
 
   if (fn() && false) { a0 } else {}
 `);

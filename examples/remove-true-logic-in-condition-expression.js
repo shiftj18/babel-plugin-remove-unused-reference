@@ -8,6 +8,7 @@ test(`
   const A2 = isX || x || 2 || false || fn() ? { } : { a2 };
   const A3 = x || isX ? { } : { a3 };
   const A4 = x || 2 || isX || false || '2' ? { } : { a4 };
+  const A5 = x || 2 || isX || false || '2' ? { } : { a4 }, A51 = {};
 
   const A0 = fn() || isX ? { } : { a0 };
 `);
@@ -18,6 +19,7 @@ test(`
   const A = true ? { } : { a };
   const A2 = true || x || 2 || '2' || fn() ? { } : { a2 };
   const A3 = x || 2 || false || true || '2' || fn() ? { } : { a3 };
+  const A4 = x || 2 || false || true || '2' || fn() ? { } : { a3 }, A41 = {};
 
   const A0 = fn() || true ? { } : { a0 };
 `);
