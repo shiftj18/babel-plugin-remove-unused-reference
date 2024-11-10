@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`main scope case 1 1`] = `
+"const abc = false;
+function gn() {
+  const abc = 'abc';
+  return abc ? 1 : 2;
+}"
+`;

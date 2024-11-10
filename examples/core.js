@@ -3,7 +3,7 @@ const { transform } = require("@babel/core");
 function dce(code) {
   return transform(code, {
     plugins: [
-      [require("../index")],
+      [require("../src/index")],
     ],
   }).code;
 }

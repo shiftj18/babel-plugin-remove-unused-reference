@@ -3,10 +3,14 @@
   "version": "1.0.2",
   "main": "index.js",
   "files": [
+    "lib",
     "index.js"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "clean": "rm -rf lib/*",
+    "babel": "babel src --out-dir lib -D",
+    "prepublishOnly": "npm test && npm run clean && npm run babel",
     "example": "node ./examples/index.js"
   },
   "repository": {
@@ -24,7 +28,12 @@
   "homepage": "https://github.com/shiftj18/babel-plugin-remove-unused-reference#readme",
   "description": "Babel plugin, remove unused references",
   "devDependencies": {
-    "@babel/core": "^7.25.9"
+    "@babel/cli": "^7.25.9",
+    "@babel/core": "^7.25.9",
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-react": "^7.25.9",
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
