@@ -1,0 +1,1 @@
+const A0 = fn() && false ? { a0 } : {};

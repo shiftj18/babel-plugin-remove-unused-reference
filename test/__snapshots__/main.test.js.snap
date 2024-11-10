@@ -7,3 +7,55 @@ function gn() {
   return abc ? 1 : 2;
 }"
 `;
+
+exports[`main used condition-slide-effects-false-expression 1`] = `
+"const isX = false;
+const A0 = fn() && isX ? {} : {
+  a0
+};"
+`;
+
+exports[`main used condition-slide-effects-false-literal-expression 1`] = `
+"const A0 = fn() && false ? {
+  a0
+} : {};"
+`;
+
+exports[`main used condition-slide-effects-true-expression 1`] = `
+"const isX = true;
+const A0 = fn() || isX ? {} : {
+  a0
+};"
+`;
+
+exports[`main used condition-slide-effects-true-literal-expression 1`] = `
+"const A0 = fn() || true ? {} : {
+  a0
+};"
+`;
+
+exports[`main used if-slide-effects-false-literal-statement 1`] = `
+"if (fn() && false) {
+  a0;
+} else {}"
+`;
+
+exports[`main used if-slide-effects-false-statement 1`] = `
+"const isX = false;
+if (fn() && isX) {
+  a0;
+} else {}"
+`;
+
+exports[`main used if-slide-effects-true-literal-statement 1`] = `
+"if (fn() || true) {} else {
+  a0;
+}"
+`;
+
+exports[`main used if-slide-effects-true-statement 1`] = `
+"const isX = true;
+if (fn() || isX) {} else {
+  a0;
+}"
+`;

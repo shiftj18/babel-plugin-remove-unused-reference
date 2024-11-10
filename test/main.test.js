@@ -21,49 +21,138 @@ function transformTest(name, opts, { plugins = [], ...rest } = {}) {
 describe('main', function() {
   describe('scope', () => {
     it('case 1', function() {
-      expect(transformTest('scope/func.js').code).toMatchSnapshot()
+      expect(transformTest('scope/case1.js').code).toMatchSnapshot()
     })
   })
 
-  // describe('unused', () => {
-  //   it('JSX', () => {
-  //     expect(
-  //       transformTest('unused/JSX.js', {}, { presets: [require.resolve('@babel/preset-react')] }).code
-  //     ).toMatchSnapshot()
-  //   })
+  describe('unused', () => {
+    it('condition false expression', () => {
+      expect(transformTest('unused/condition-false-expression.js').code).toMatchInlineSnapshot(`
+        "const isX = false;
+        const A = {};
+        const A2 = {};
+        const A3 = {};
+        const A4 = {};
+        const A5 = {},
+          A51 = {};"
+      `)
+    })
 
-  //   it('VariableDeclarator', () => {
-  //     expect(transformTest('unused/VariableDeclarator.js', {}).code).toMatchSnapshot()
-  //   })
+    it('condition false literal expression', () => {
+      expect(transformTest('unused/condition-false-literal-expression.js').code).toMatchInlineSnapshot(`
+        "const A = {};
+        const A2 = {};
+        const A3 = {};
+        const A4 = {},
+          A41 = {};"
+      `)
+    })
 
-  //   it('MemberExpression', () => {
-  //     expect(transformTest('unused/MemberExpression.js').code).toMatchInlineSnapshot(`
-  //       "const ref = {};
-  //       const x = ref.Tab;"
-  //     `)
-  //   })
+    it('if false statement', () => {
+      expect(transformTest('unused/if-false-statement.js').code).toMatchInlineSnapshot(`
+        "const isX = false;
+        {}
+        {}
+        {}
+        if (x && 2 && true) {} else {}"
+      `)
+    })
 
-  // })
+    it('if false literal statement', () => {
+      expect(transformTest('unused/if-false-literal-statement.js').code).toMatchInlineSnapshot(`
+        "{}
+        {}
+        {}
+        if (x && 2 && true) {} else {}"
+      `)
+    })
 
-  // describe('used', () => {
-  //   it('JSX', function() {
-  //     expect(transformTest('used/JSX.js', {}, { presets: ['@babel/preset-react'] }).code).toMatchInlineSnapshot(`
-  //       "import Tab from 'tab';
-  //       const comp = /*#__PURE__*/React.createElement(Tab, null);"
-  //     `)
-  //   })
+    it('condition true expression', () => {
+      expect(transformTest('unused/condition-true-expression.js').code).toMatchInlineSnapshot(`
+        "const isX = true;
+        const A = {};
+        const A2 = {};
+        const A3 = {};
+        const A4 = {};
+        const A5 = {},
+          A51 = {};"
+      `)
+    })
 
-  //   it('ObjectProperty-computed', function() {
-  //     expect(transformTest('used/ObjectProperty-computed.js', {}).code).toMatchInlineSnapshot(`
-  //       "import Tab from 'tab';
-  //       export const x = {
-  //         [Tab]: 'abc',
-  //         ...{
-  //           a: '2'
-  //         }
-  //       };"
-  //     `)
-  //   })
+    it('condition true literal expression', () => {
+      expect(transformTest('unused/condition-true-literal-expression.js').code).toMatchInlineSnapshot(`
+        "const A = {};
+        const A2 = {};
+        const A3 = {};
+        const A4 = {},
+          A41 = {};"
+      `)
+    })
 
-  // })
+    it('if true statement', () => {
+      expect(transformTest('unused/if-true-statement.js').code).toMatchInlineSnapshot(`
+        "const isX = true;
+        {}
+        {}
+        {}
+        {}"
+      `)
+    })
+
+    it('if true literal statement', () => {
+      expect(transformTest('unused/if-true-literal-statement.js').code).toMatchInlineSnapshot(`
+        "{}
+        {}
+        {}
+        {}
+        {}"
+      `)
+    })
+
+    it('fix case1', () => {
+      expect(transformTest('unused/fix-case1.js').code).toMatchInlineSnapshot(`
+        "const isWeb = false;
+        const isMiniApp = true;
+        if (isTaobao && isUniApp && isShowUniAppTab && isdowngrade) {
+          type = 'tab';
+        } else if (isTaobao && isUniApp && isShowUniAppTab) {
+          type = 'holder';
+        }"
+      `)
+    })
+  })
+
+  describe('used', () => {
+    it('condition-slide-effects-false-expression', function() {
+      expect(transformTest('used/condition-slide-effects-false-expression.js').code).toMatchSnapshot()
+    })
+
+    it('condition-slide-effects-false-literal-expression', function() {
+      expect(transformTest('used/condition-slide-effects-false-literal-expression.js').code).toMatchSnapshot()
+    })
+
+    it('if-slide-effects-false-statement', function() {
+      expect(transformTest('used/if-slide-effects-false-statement.js').code).toMatchSnapshot()
+    })
+
+    it('if-slide-effects-false-literal-statement', function() {
+      expect(transformTest('used/if-slide-effects-false-literal-statement.js').code).toMatchSnapshot()
+    })
+
+    it('condition-slide-effects-true-expression', function() {
+      expect(transformTest('used/condition-slide-effects-true-expression.js').code).toMatchSnapshot()
+    })
+
+    it('condition-slide-effects-true-literal-expression', function() {
+      expect(transformTest('used/condition-slide-effects-true-literal-expression.js').code).toMatchSnapshot()
+    })
+
+    it('if-slide-effects-true-statement', function() {
+      expect(transformTest('used/if-slide-effects-true-statement.js').code).toMatchSnapshot()
+    })
+
+    it('if-slide-effects-true-literal-statement', function() {
+      expect(transformTest('used/if-slide-effects-true-literal-statement.js').code).toMatchSnapshot()
+    })
+  })
 })
