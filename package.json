@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-remove-unused-reference",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "index.js",
   "files": [
     "lib",
